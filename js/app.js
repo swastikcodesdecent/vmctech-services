@@ -47,14 +47,18 @@ class App {
   updateDbStatus(isLive) {
     const el = document.getElementById('db-status-badge');
     if (el) {
+    document.querySelectorAll('.db-status-pill').forEach(el => {
       if (isLive) {
         el.innerHTML = `<span class="status-dot"></span> Cloud Firestore (Live)`;
+        el.innerHTML = `<span class="status-dot"></span> Cloud Firestore (Live Sync)`;
         el.style.color = 'var(--status-success)';
       } else {
         el.innerHTML = `<span class="status-dot"></span> Realtime Engine (Active)`;
         el.title = 'Configured with high-fidelity reactive sync. Real Firebase keys can be added to firebase-config.js';
+        el.style.color = 'var(--text-dim)';
       }
     }
+    });
   }
 
   route(user) {
@@ -361,6 +365,7 @@ class App {
     this.showModal(modalHtml);
 
     document.getElementById('setup-pass-form').addEventListener('submit', (e) => {
+    document.getElementById('setup-pass-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const p1 = document.getElementById('initial-pass').value;
       const p2 = document.getElementById('confirm-initial-pass').value;
@@ -372,6 +377,22 @@ class App {
 
       const users = portalStore.getCollection('users');
       const targetUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      let targetUser = users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+
+      if (!targetUser && portalStore.firebaseDb) {
+        try {
+          const q = await portalStore.firebaseDb.collection('users')
+            .where('email', '==', email.toLowerCase())
+            .limit(1)
+            .get();
+          if (!q.empty) {
+            const doc = q.docs[0];
+            targetUser = { id: doc.id, ...doc.data() };
+          }
+        } catch (err) {
+          console.warn('[App] Firestore user lookup in setup password:', err);
+        }
+      }
 
       if (targetUser) {
         authManager.updatePassword(targetUser.id, p1);
