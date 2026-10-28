@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VMC Tech India — Administrative HQ Login</title>
+  <meta name="description" content="Restricted Administrative Access Console for VMC Tech India Operations">
+  <meta name="theme-color" content="#0B1020">
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- Design System -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Ambient Glows -->
+  <div class="ambient-glow ambient-glow-1"></div>
+  <div class="ambient-glow ambient-glow-2"></div>
+
+  <div class="admin-login-wrapper">
+    <div class="admin-login-card">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <div class="admin-security-badge">
+          <i data-lucide="shield-alert" style="width: 14px; height: 14px;"></i>
+          <span>Restricted &bull; Operations HQ</span>
+        </div>
+        <h1 style="font-size: 1.85rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em;">Administrative Console</h1>
+        <p style="font-size: 0.9rem; color: var(--text-muted);">
+          Authorized VMC Tech India personnel only.
+        </p>
+      </div>
+
+      <form id="admin-login-form">
+        <div class="form-group">
+          <label for="admin-email">Admin Email Address</label>
+          <div class="input-with-icon">
+            <i data-lucide="shield"></i>
+            <input type="email" id="admin-email" class="form-control" placeholder="admin@vmctechindia.in" required autocomplete="username" value="admin@vmctechindia.in">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="admin-password">Administrative Password</label>
+          <div class="input-with-icon">
+            <i data-lucide="lock"></i>
+            <input type="password" id="admin-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+        </div>
+
+        <button type="submit" id="admin-submit-btn" class="btn btn-primary btn-block" style="margin-top: 1.5rem; background: linear-gradient(135deg, #7C5CFC 0%, #4F8CFF 100%);">
+          <i data-lucide="key" style="width: 16px; height: 16px;"></i>
+          <span>Sign In to Admin HQ</span>
+        </button>
+      </form>
+
+      <div style="margin-top: 1.75rem; padding: 0.85rem; border-radius: var(--radius-md); background: rgba(124, 92, 252, 0.06); border: 1px solid rgba(124, 92, 252, 0.2); font-size: 0.78rem; color: var(--text-dim); text-align: center;">
+        <i data-lucide="file-check" style="width: 13px; height: 13px; display: inline; color: var(--accent-purple);"></i>
+        All access sessions and data modifications are logged to the immutable system audit trail.
+      </div>
+
+      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.85rem;">
+        <a href="index.html" style="color: var(--text-muted); display: inline-flex; align-items: center; gap: 0.4rem;">
+          <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Return to Client Portal
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Admin Auth Script -->
+  <script type="module">
+    import { authManager } from './js/auth.js';
+
+    if (window.lucide) window.lucide.createIcons();
+
+    const form = document.getElementById('admin-login-form');
+    const submitBtn = document.getElementById('admin-submit-btn');
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<div style="font-size: 0.875rem;">${msg}</div>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('admin-email').value;
+      const pass = document.getElementById('admin-password').value;
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>Authenticating...</span>`;
+        await authManager.login(email, pass, 'admin');
+        showToast('Administrative authorization verified. Redirecting...', 'success');
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 600);
+      } catch (err) {
+        showToast(err.message, 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i data-lucide="key" style="width: 16px; height: 16px;"></i><span>Sign In to Admin HQ</span>`;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  </script>
+</body>
+</html>

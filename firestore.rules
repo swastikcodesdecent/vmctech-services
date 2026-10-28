@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for secure role-based authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'admin@vmctechindia.in' ||
+        request.auth.token.admin == true ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      // Only admins can create clients or modify roles/suspension
+      allow create: if isAdmin();
+      // Clients can only update non-administrative fields (phone, displayName)
+      allow update: if isAdmin() || (
+        isOwner(userId) && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'email', 'createdAt'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 2. Services Catalog (Templates)
+    match /services/{serviceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // 3. Client Services (Assigned Subscriptions with live metrics)
+    match /clientServices/{subscriptionId} {
+      // Clients can only read their own assigned services
+      allow read: if isAuthenticated() && (
+        resource.data.clientId == request.auth.uid || isAdmin()
+      );
+      // Strictly only administrators or Cloud Functions can assign, renew, or modify metrics!
+      allow write: if isAdmin();
+    }
+
+    // 4. Invoices
+    match /invoices/{invoiceId} {
+      // Clients can only read their own invoices
+      allow read: if isAuthenticated() && (
+        resource.data.clientId == request.auth.uid || isAdmin()
+      );
+      // Clients CANNOT mark invoices as paid or change amounts
+      allow write: if isAdmin();
+    }
+
+    // 5. Payments
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (
+        resource.data.clientId == request.auth.uid || isAdmin()
+      );
+      // Only admins can record confirmed payments
+      allow write: if isAdmin();
+    }
+
+    // 6. In-App Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        resource.data.targetUserId == request.auth.uid || 
+        resource.data.role == getUserData().role || 
+        resource.data.role == 'all' || 
+        isAdmin()
+      );
+      // Users can only mark their own notification as read
+      allow update: if isAuthenticated() && (
+        resource.data.targetUserId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead'])
+      ) || isAdmin();
+      allow create, delete: if isAdmin();
+    }
+
+    // 7. Reminder Logs & Audit Activity Logs
+    match /reminderLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /activityLogs/{activityId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated(); // allow audited events
+      allow update, delete: if false; // immutable audit log
+    }
+  }
+}

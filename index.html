@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VMC Tech India — Client Service Management Portal</title>
+  <meta name="description" content="Production Client Service Management Portal for VMC Tech India. Real-time usage tracking, automated expiry reminders, invoice billing, and client management.">
+  <meta name="theme-color" content="#0B1020">
+
+  <!-- Typography: Inter & Manrope Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- Firebase v10 CDN Scripts (Compat for maximum browser compatibility) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <!-- Custom Design System Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Ambient Glow Backgrounds -->
+  <div class="ambient-glow ambient-glow-1"></div>
+  <div class="ambient-glow ambient-glow-2"></div>
+
+  <!-- Main Root Container -->
+  <div id="app-container">
+
+    <!-- ====================================================================
+         1. CLIENT AUTHENTICATION VIEW (Modern SaaS Split-Screen)
+         ==================================================================== -->
+    <div id="view-auth" class="auth-split-layout" style="display: none;">
+      <!-- Left Hero Showcase Pane -->
+      <div class="auth-hero-pane">
+        <div class="auth-hero-header">
+          <div class="brand-badge">
+            <i data-lucide="shield-check" class="logo-icon"></i>
+            <span>VMC TECH INDIA</span>
+          </div>
+          <h1 class="auth-hero-title">
+            Enterprise Client Service & <span>Infrastructure Portal</span>
+          </h1>
+          <p class="auth-hero-subtitle">
+            Real-time usage monitoring, automated renewals, and transparent billing for your website hosting, domain assets, and maintenance SLA.
+          </p>
+
+          <!-- Interactive Live Service Metric Preview Card -->
+          <div class="hero-preview-card">
+            <div class="hero-preview-header">
+              <div class="hero-preview-title">
+                <div class="hero-preview-icon">
+                  <i data-lucide="server"></i>
+                </div>
+                <div>
+                  <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0;">Production Cloud Hosting</h4>
+                  <p style="font-size: 0.75rem; color: var(--text-dim); margin: 0;">NVMe Storage SLA Guarantee</p>
+                </div>
+              </div>
+              <span class="badge-status badge-active" style="font-size: 0.75rem;">Active</span>
+            </div>
+
+            <div class="usage-track-container" style="margin-bottom: 0.75rem;">
+              <div class="usage-track-header">
+                <span class="usage-track-label">Disk Storage Consumed:</span>
+                <span class="usage-track-value" style="color: var(--accent-blue);">18.5 / 50 GB (37%)</span>
+              </div>
+              <div class="progress-bar-bg" style="height: 8px;">
+                <div class="progress-bar-fill safe" style="width: 37%;"></div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.75rem;">
+              <span class="live-synced-badge"><span class="live-dot"></span> Live Firestore Sync</span>
+              <span>Next Renewal: <strong style="color: var(--text-main);">24 Days Left</strong></span>
+            </div>
+          </div>
+
+          <!-- Feature checkmarks -->
+          <div class="hero-feature-list">
+            <div class="hero-feature-item">
+              <i data-lucide="check-circle-2"></i>
+              <span>Live resource metrics update instantly without page reloads</span>
+            </div>
+            <div class="hero-feature-item">
+              <i data-lucide="check-circle-2"></i>
+              <span>Automated expiry alerts at 7 days, 3 days, and 1 day prior</span>
+            </div>
+            <div class="hero-feature-item">
+              <i data-lucide="check-circle-2"></i>
+              <span>GST compliant tax invoices with instant receipts & records</span>
+            </div>
+            <div class="hero-feature-item">
+              <i data-lucide="check-circle-2"></i>
+              <span>Direct SLA support desk with rapid ticket escalation</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="auth-hero-footer">
+          <span>&copy; 2026 VMC Tech India Pvt Ltd &bull; All Rights Reserved</span>
+        </div>
+      </div>
+
+      <!-- Right Form Pane -->
+      <div class="auth-form-pane">
+        <div class="auth-form-container">
+          <div class="auth-form-header">
+            <h2>Client Sign In</h2>
+            <p>Enter your account credentials to view your subscriptions and invoices.</p>
+          </div>
+
+          <!-- Login Form -->
+          <form id="auth-login-form">
+            <div class="form-group">
+              <label for="auth-email">Account Email Address</label>
+              <div class="input-with-icon">
+                <i data-lucide="mail"></i>
+                <input type="email" id="auth-email" class="form-control" placeholder="client@company.com" required autocomplete="username">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="auth-password">Password</label>
+              <div class="input-with-icon">
+                <i data-lucide="key-round"></i>
+                <input type="password" id="auth-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+              </div>
+            </div>
+
+            <div class="form-options">
+              <label class="remember-me">
+                <input type="checkbox" id="auth-remember" checked>
+                <span>Keep me signed in</span>
+              </label>
+              <a href="javascript:void(0)" onclick="const em = document.getElementById('auth-email').value || 'client@company.com'; window.adminController.sendSetupLink(em);">Forgot / Set Password?</a>
+            </div>
+
+            <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-block" style="padding: 0.85rem;">
+              <span>Sign In to Client Portal</span>
+            </button>
+          </form>
+
+          <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.825rem; color: var(--text-dim); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <i data-lucide="shield-check" style="width: 15px; height: 15px; color: var(--status-success);"></i> 
+            <span>256-Bit TLS Secured &bull; Official Client Portal</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================================
+         2. ADMIN DASHBOARD VIEW
+         ==================================================================== -->
+    <div id="view-admin" class="dashboard-layout" style="display: none;">
+      
+      <!-- Admin Sidebar -->
+      <aside class="sidebar" id="admin-sidebar">
+        <div class="sidebar-header">
+          <div class="brand-logo">
+            <div class="brand-icon-box">V</div>
+            <div class="brand-text">
+              <h2>VMC TECH</h2>
+              <span>Admin HQ</span>
+            </div>
+          </div>
+          <span class="sidebar-role-pill">Admin</span>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="nav-section-title">Operations</div>
+          <a href="#" class="nav-link admin-nav-item active" data-tab="overview">
+            <div class="nav-link-left">
+              <i data-lucide="layout-dashboard"></i>
+              <span>Dashboard Overview</span>
+            </div>
+          </a>
+          <a href="#" class="nav-link admin-nav-item" data-tab="clients">
+            <div class="nav-link-left">
+              <i data-lucide="users"></i>
+              <span>Client Directory</span>
+            </div>
+          </a>
+          <a href="#" class="nav-link admin-nav-item" data-tab="services">
+            <div class="nav-link-left">
+              <i data-lucide="server"></i>
+              <span>Services & Live Usage</span>
+            </div>
+          </a>
+
+          <div class="nav-section-title">Finance & Billing</div>
+          <a href="#" class="nav-link admin-nav-item" data-tab="invoices">
+            <div class="nav-link-left">
+              <i data-lucide="file-text"></i>
+              <span>Invoices & Payments</span>
+            </div>
+          </a>
+          <a href="#" class="nav-link admin-nav-item" data-tab="reminders">
+            <div class="nav-link-left">
+              <i data-lucide="bell-ring"></i>
+              <span>Expiry & Reminders</span>
+            </div>
+          </a>
+
+          <div class="nav-section-title">Security & System</div>
+          <a href="#" class="nav-link admin-nav-item" data-tab="activity">
+            <div class="nav-link-left">
+              <i data-lucide="shield-check"></i>
+              <span>Audit Trail Logs</span>
+            </div>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="user-profile-widget">
+            <div class="user-avatar-info">
+              <div class="avatar profile-user-avatar">V</div>
+              <div class="user-text">
+                <div class="user-name profile-user-name">Vikram Choudhary</div>
+                <div class="user-email profile-user-email">admin@vmctech.in</div>
+              </div>
+            </div>
+            <button class="btn-icon btn-logout" title="Sign Out">
+              <i data-lucide="log-out"></i>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Admin Main Content Wrapper -->
+      <main class="main-wrapper">
+        <!-- Topbar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <button class="btn-icon mobile-menu-toggle" id="admin-menu-btn" title="Toggle Sidebar">
+              <i data-lucide="menu"></i>
+            </button>
+            <div class="page-title">
+              <h1 id="admin-page-title">Admin Dashboard & Analytics</h1>
+            </div>
+          </div>
+
+          <div class="topbar-search">
+            <i data-lucide="search"></i>
+            <input type="text" id="admin-search-input" placeholder="Search clients, services, invoices...">
+          </div>
+
+          <div class="topbar-right">
+            <!-- Database Realtime Status Indicator -->
+            <div class="db-status-pill" id="db-status-badge">
+              <span class="status-dot"></span> Realtime Engine (Active)
+            </div>
+
+            <!-- Notifications Dropdown -->
+            <div style="position: relative;">
+              <button class="btn-icon notification-bell-btn" title="Notifications">
+                <i data-lucide="bell"></i>
+                <span class="notification-badge notif-unread-count" style="display: none;">0</span>
+              </button>
+              <div class="dropdown-menu"></div>
+            </div>
+
+            <!-- Theme Toggle -->
+            <button class="btn-icon theme-toggle-btn" title="Toggle Light/Dark Theme">
+              <i data-lucide="sun-moon"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- Dynamic Admin Content Container -->
+        <div class="content-body" id="admin-tab-content">
+          <!-- Dynamic rendering via admin.js -->
+        </div>
+      </main>
+    </div>
+
+
+    <!-- ====================================================================
+         3. CLIENT DASHBOARD VIEW
+         ==================================================================== -->
+    <div id="view-client" class="dashboard-layout" style="display: none;">
+      
+      <!-- Client Sidebar -->
+      <aside class="sidebar" id="client-sidebar">
+        <div class="sidebar-header">
+          <div class="brand-logo">
+            <div class="brand-icon-box">V</div>
+            <div class="brand-text">
+              <h2>VMC TECH</h2>
+              <span>Client Portal</span>
+            </div>
+          </div>
+          <span class="sidebar-role-pill client">Client</span>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="nav-section-title">My Services</div>
+          <a href="#" class="nav-link client-nav-item active" data-tab="services">
+            <div class="nav-link-left">
+              <i data-lucide="layout-grid"></i>
+              <span>Active Subscriptions</span>
+            </div>
+          </a>
+
+          <div class="nav-section-title">Billing & Invoices</div>
+          <a href="#" class="nav-link client-nav-item" data-tab="invoices">
+            <div class="nav-link-left">
+              <i data-lucide="receipt"></i>
+              <span>Invoices & Receipts</span>
+            </div>
+          </a>
+
+          <div class="nav-section-title">Communication</div>
+          <a href="#" class="nav-link client-nav-item" data-tab="notifications">
+            <div class="nav-link-left">
+              <i data-lucide="bell"></i>
+              <span>Notifications & Alerts</span>
+            </div>
+          </a>
+          <a href="#" class="nav-link client-nav-item" data-tab="support">
+            <div class="nav-link-left">
+              <i data-lucide="headphones"></i>
+              <span>Support SLA & Tickets</span>
+            </div>
+          </a>
+
+          <div class="nav-section-title">Account</div>
+          <a href="#" class="nav-link client-nav-item" data-tab="settings">
+            <div class="nav-link-left">
+              <i data-lucide="settings"></i>
+              <span>Account & Security</span>
+            </div>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="user-profile-widget">
+            <div class="user-avatar-info">
+              <div class="avatar profile-user-avatar">R</div>
+              <div class="user-text">
+                <div class="user-name profile-user-name">Rahul Sharma</div>
+                <div class="user-email profile-user-company">TechNova Solutions</div>
+              </div>
+            </div>
+            <button class="btn-icon btn-logout" title="Sign Out">
+              <i data-lucide="log-out"></i>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Client Main Content Wrapper -->
+      <main class="main-wrapper">
+        <!-- Topbar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <button class="btn-icon mobile-menu-toggle" id="client-menu-btn" title="Toggle Sidebar">
+              <i data-lucide="menu"></i>
+            </button>
+            <div class="page-title">
+              <h1 id="client-page-title">My Active Services & Usage</h1>
+            </div>
+          </div>
+
+          <div class="topbar-right">
+            <!-- Database Realtime Status Indicator -->
+            <div class="db-status-pill">
+              <span class="status-dot"></span> Live Real-time Sync
+            </div>
+
+            <!-- Notifications Dropdown -->
+            <div style="position: relative;">
+              <button class="btn-icon notification-bell-btn" title="Notifications">
+                <i data-lucide="bell"></i>
+                <span class="notification-badge notif-unread-count" style="display: none;">0</span>
+              </button>
+              <div class="dropdown-menu"></div>
+            </div>
+
+            <!-- Theme Toggle -->
+            <button class="btn-icon theme-toggle-btn" title="Toggle Theme">
+              <i data-lucide="sun-moon"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- Client Content Body -->
+        <div class="content-body">
+          <!-- Personalized Welcome Banner -->
+          <div style="background: var(--bg-card); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: var(--radius-xl); padding: 1.5rem 2rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: gap; gap: 1rem;">
+            <div>
+              <h2 id="client-welcome-text" style="font-size: 1.5rem; margin-bottom: 0.25rem;">Welcome back, Rahul Sharma</h2>
+              <p style="font-size: 0.9rem; color: var(--accent-blue);" id="client-company-text">TechNova Solutions Pvt Ltd</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+              <button class="btn btn-primary btn-sm" onclick="window.clientController.switchTab('support')">
+                <i data-lucide="life-buoy"></i> Raise Support Ticket
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Client Metrics Grid -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-card-info">
+                <h3>Active Subscriptions</h3>
+                <div class="stat-card-value" id="c-stat-active-services">...</div>
+                <div class="stat-card-subtext positive"><i data-lucide="check-circle-2"></i> Operational</div>
+              </div>
+              <div class="stat-icon-box"><i data-lucide="server"></i></div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-info">
+                <h3>Next Upcoming Renewal</h3>
+                <div class="stat-card-value" id="c-stat-next-renewal" style="font-size: 1.25rem; font-weight: 700; margin-top: 0.4rem;">...</div>
+                <div class="stat-card-subtext warning"><i data-lucide="clock"></i> Auto countdown</div>
+              </div>
+              <div class="stat-icon-box amber"><i data-lucide="calendar"></i></div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-info">
+                <h3>Pending Invoices</h3>
+                <div class="stat-card-value" id="c-stat-pending-invoices">...</div>
+                <div class="stat-card-subtext"><i data-lucide="receipt"></i> Due for clearance</div>
+              </div>
+              <div class="stat-icon-box purple"><i data-lucide="credit-card"></i></div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-info">
+                <h3>Unread Alerts</h3>
+                <div class="stat-card-value" id="c-stat-unread-notifs">...</div>
+                <div class="stat-card-subtext"><i data-lucide="bell"></i> In-app notices</div>
+              </div>
+              <div class="stat-icon-box"><i data-lucide="message-square"></i></div>
+            </div>
+          </div>
+
+          <!-- Client Tab Content (Dynamic) -->
+          <div id="client-tab-content">
+            <!-- Dynamic rendering via client.js -->
+          </div>
+        </div>
+      </main>
+    </div>
+
+  </div> <!-- /#app-container -->
+
+  <!-- Modal Backdrop & Dialog Container -->
+  <div id="modal-overlay" class="modal-overlay"></div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Main ES Module Bootstrapper -->
+  <script type="module" src="js/app.js"></script>
+
+</body>
+</html>
