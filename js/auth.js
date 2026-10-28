@@ -1,6 +1,7 @@
 /* ==========================================================================
    VMC TECH INDIA - AUTHENTICATION & ROLE-BASED ACCESS CONTROLLER
    Secure session persistence, role guards, password setup, reset links
+   Multi-Device Session Persistence, Firestore User Verification, Secure Passwords
    ========================================================================== */
 
 import { portalStore } from './store.js';
@@ -68,22 +69,70 @@ class AuthManager {
   }
 
   // Login method for both Admin and Client with credentials
+  // Login method for both Admin and Client across devices
   async login(email, password, requestedRole = null) {
     const cleanEmail = (email || '').trim().toLowerCase();
     const users = portalStore.getCollection('users');
     const user = users.find(u => u.email.toLowerCase() === cleanEmail);
 
+    // 1. Ensure backend is initialized so Firestore is reachable
+    if (!portalStore.isLiveFirebase && typeof window !== 'undefined' && window.firebase) {
+      await portalStore.initBackend();
+    }
+
+    // 2. Query user from local reactive cache
+    let users = portalStore.getCollection('users');
+    let user = users.find(u => u.email && u.email.toLowerCase() === cleanEmail);
+
+    // 3. Multi-device sync: If user was created on another device and not yet in cache, query Firestore directly
+    if (!user && portalStore.firebaseDb) {
+      try {
+        const querySnapshot = await portalStore.firebaseDb.collection('users')
+          .where('email', '==', cleanEmail)
+          .limit(1)
+          .get();
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0];
+          user = { id: doc.id, ...doc.data() };
+        }
+      } catch (err) {
+        console.warn('[AuthManager] Direct Firestore user lookup warning:', err.message);
+      }
+    }
+
+    // 4. Default Admin fallback if database is newly initialized
+    if (!user && cleanEmail === 'admin@vmctechindia.in') {
+      user = {
+        id: 'admin_1',
+        email: 'admin@vmctechindia.in',
+        displayName: 'VMC Administrator',
+        company: 'VMC Tech India HQ',
+        role: 'admin',
+        phone: '+91 98201 12345',
+        status: 'active',
+        password: 'swastikdps2009S'
+      };
+      if (portalStore.firebaseDb) {
+        try {
+          await portalStore.firebaseDb.collection('users').doc('admin_1').set(user);
+        } catch (e) {}
+      }
+    }
+
     if (!user) {
       throw new Error('No account found with this email address.');
+      throw new Error('No account found with this email address. Please check your credentials.');
     }
 
     if (user.status === 'suspended') {
       throw new Error('This account has been suspended by administration. Please contact support.');
+      throw new Error('This account has been suspended by administration. Please contact support@vmctech.in.');
     }
 
     if (requestedRole && user.role !== requestedRole) {
       if (user.role === 'admin' && requestedRole === 'client') {
         throw new Error('Administrative account detected. Please use the "Admin Login" portal link at the bottom.');
+        throw new Error('Administrative account detected. Please use the Admin Console login.');
       } else if (user.role === 'client' && requestedRole === 'admin') {
         throw new Error('Access restricted. This is a Client account. Please return to the Client Portal.');
       }
@@ -92,18 +141,22 @@ class AuthManager {
 
     // Default password policy check
     // In local demo mode: accept 'Admin@1234' for admin, or password length >= 6, or user's custom set password
+    // Verify credentials
     const validPassword = user.password 
       ? user.password === password 
       : (password && password.length >= 4);
+      : (user.tempPassword ? user.tempPassword === password : (password && password.length >= 4));
 
     if (!validPassword) {
       throw new Error('Invalid password. Please check your credentials or request a password reset.');
     }
 
     // Update lastLoginAt
+    // Update lastLoginAt in Firestore & local store
     portalStore.updateClient(user.id, { lastLoginAt: new Date().toISOString() });
 
     // Store session without sensitive hashes
+    // Store session without sensitive credentials
     const sessionUser = {
       id: user.id,
       email: user.email,
@@ -130,6 +183,7 @@ class AuthManager {
   }
 
   // Quick switch for live testing / demo showcase
+  // Quick switch for live testing
   quickLogin(userId) {
     const users = portalStore.getCollection('users');
     const user = users.find(u => u.id === userId);
@@ -166,10 +220,12 @@ class AuthManager {
   }
 
   // Secure Password Reset or Setup link generator (Requirement 1 & 6)
+  // Secure Password Reset or Setup link generator
   requestPasswordResetLink(email) {
     const cleanEmail = (email || '').trim().toLowerCase();
     const users = portalStore.getCollection('users');
     const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+    const user = users.find(u => u.email && u.email.toLowerCase() === cleanEmail);
 
     if (!user) {
       // Security best practice: don't reveal email existence in public notice
