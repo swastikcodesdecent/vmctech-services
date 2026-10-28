@@ -1,6 +1,5 @@
 /* ==========================================================================
    VMC TECH INDIA - AUTHENTICATION & ROLE-BASED ACCESS CONTROLLER
-   Secure session persistence, role guards, password setup, reset links
    Multi-Device Session Persistence, Firestore User Verification, Secure Passwords
    ========================================================================== */
 
@@ -68,12 +67,9 @@ class AuthManager {
     return this.currentUser;
   }
 
-  // Login method for both Admin and Client with credentials
   // Login method for both Admin and Client across devices
   async login(email, password, requestedRole = null) {
     const cleanEmail = (email || '').trim().toLowerCase();
-    const users = portalStore.getCollection('users');
-    const user = users.find(u => u.email.toLowerCase() === cleanEmail);
 
     // 1. Ensure backend is initialized so Firestore is reachable
     if (!portalStore.isLiveFirebase && typeof window !== 'undefined' && window.firebase) {
@@ -120,18 +116,15 @@ class AuthManager {
     }
 
     if (!user) {
-      throw new Error('No account found with this email address.');
       throw new Error('No account found with this email address. Please check your credentials.');
     }
 
     if (user.status === 'suspended') {
-      throw new Error('This account has been suspended by administration. Please contact support.');
       throw new Error('This account has been suspended by administration. Please contact support@vmctech.in.');
     }
 
     if (requestedRole && user.role !== requestedRole) {
       if (user.role === 'admin' && requestedRole === 'client') {
-        throw new Error('Administrative account detected. Please use the "Admin Login" portal link at the bottom.');
         throw new Error('Administrative account detected. Please use the Admin Console login.');
       } else if (user.role === 'client' && requestedRole === 'admin') {
         throw new Error('Access restricted. This is a Client account. Please return to the Client Portal.');
@@ -139,23 +132,18 @@ class AuthManager {
       throw new Error(`Unauthorized role access. Please use the ${user.role === 'admin' ? 'Admin' : 'Client'} login portal.`);
     }
 
-    // Default password policy check
-    // In local demo mode: accept 'Admin@1234' for admin, or password length >= 6, or user's custom set password
     // Verify credentials
     const validPassword = user.password 
       ? user.password === password 
-      : (password && password.length >= 4);
       : (user.tempPassword ? user.tempPassword === password : (password && password.length >= 4));
 
     if (!validPassword) {
       throw new Error('Invalid password. Please check your credentials or request a password reset.');
     }
 
-    // Update lastLoginAt
     // Update lastLoginAt in Firestore & local store
     portalStore.updateClient(user.id, { lastLoginAt: new Date().toISOString() });
 
-    // Store session without sensitive hashes
     // Store session without sensitive credentials
     const sessionUser = {
       id: user.id,
@@ -182,7 +170,6 @@ class AuthManager {
     return sessionUser;
   }
 
-  // Quick switch for live testing / demo showcase
   // Quick switch for live testing
   quickLogin(userId) {
     const users = portalStore.getCollection('users');
@@ -219,16 +206,13 @@ class AuthManager {
     }
   }
 
-  // Secure Password Reset or Setup link generator (Requirement 1 & 6)
   // Secure Password Reset or Setup link generator
   requestPasswordResetLink(email) {
     const cleanEmail = (email || '').trim().toLowerCase();
     const users = portalStore.getCollection('users');
-    const user = users.find(u => u.email.toLowerCase() === cleanEmail);
     const user = users.find(u => u.email && u.email.toLowerCase() === cleanEmail);
 
     if (!user) {
-      // Security best practice: don't reveal email existence in public notice
       return {
         success: true,
         message: 'If an account exists with this email, a secure setup link has been dispatched.'
@@ -238,8 +222,6 @@ class AuthManager {
     const resetToken = `tok_${Math.random().toString(36).substring(2)}_${Date.now()}`;
     const setupUrl = `${window.location.origin}${window.location.pathname}?action=setup_password&token=${resetToken}&email=${encodeURIComponent(user.email)}`;
 
-    // In a live Firebase/SMTP environment, Cloud Functions handles sending the email.
-    // For immediate transparency in portal, we log this and return the link
     portalStore.logActivity({
       action: 'PASSWORD_RESET_DISPATCHED',
       targetType: 'user',
