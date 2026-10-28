@@ -45,19 +45,14 @@ class App {
   }
 
   updateDbStatus(isLive) {
-    const el = document.getElementById('db-status-badge');
-    if (el) {
     document.querySelectorAll('.db-status-pill').forEach(el => {
       if (isLive) {
-        el.innerHTML = `<span class="status-dot"></span> Cloud Firestore (Live)`;
         el.innerHTML = `<span class="status-dot"></span> Cloud Firestore (Live Sync)`;
         el.style.color = 'var(--status-success)';
       } else {
         el.innerHTML = `<span class="status-dot"></span> Realtime Engine (Active)`;
-        el.title = 'Configured with high-fidelity reactive sync. Real Firebase keys can be added to firebase-config.js';
         el.style.color = 'var(--text-dim)';
       }
-    }
     });
   }
 
@@ -364,7 +359,6 @@ class App {
 
     this.showModal(modalHtml);
 
-    document.getElementById('setup-pass-form').addEventListener('submit', (e) => {
     document.getElementById('setup-pass-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const p1 = document.getElementById('initial-pass').value;
@@ -376,7 +370,6 @@ class App {
       }
 
       const users = portalStore.getCollection('users');
-      const targetUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
       let targetUser = users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
 
       if (!targetUser && portalStore.firebaseDb) {
