@@ -13,6 +13,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
+  <!-- Firebase v10 CDN Scripts (Compat for maximum browser compatibility) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
   <!-- Design System -->
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -60,7 +65,7 @@
 
       <div style="margin-top: 1.75rem; padding: 0.85rem; border-radius: var(--radius-md); background: rgba(124, 92, 252, 0.06); border: 1px solid rgba(124, 92, 252, 0.2); font-size: 0.78rem; color: var(--text-dim); text-align: center;">
         <i data-lucide="file-check" style="width: 13px; height: 13px; display: inline; color: var(--accent-purple);"></i>
-        All access sessions and data modifications are logged to the immutable system audit trail.
+        All access sessions and data modifications are logged to the immutable Cloud Firestore audit trail.
       </div>
 
       <div style="margin-top: 1.5rem; text-align: center; font-size: 0.85rem;">
@@ -77,8 +82,12 @@
   <!-- Admin Auth Script -->
   <script type="module">
     import { authManager } from './js/auth.js';
+    import { portalStore } from './js/store.js';
 
     if (window.lucide) window.lucide.createIcons();
+
+    // Initialize backend so Firestore sync is ready immediately
+    portalStore.initBackend();
 
     const form = document.getElementById('admin-login-form');
     const submitBtn = document.getElementById('admin-submit-btn');
@@ -102,7 +111,7 @@
 
       try {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span>Authenticating...</span>`;
+        submitBtn.innerHTML = `<span>Authenticating with Cloud Firestore...</span>`;
         await authManager.login(email, pass, 'admin');
         showToast('Administrative authorization verified. Redirecting...', 'success');
         setTimeout(() => {
